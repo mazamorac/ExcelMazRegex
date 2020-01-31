@@ -17,14 +17,16 @@ As of v1 it's only for Excel formulas inside a worksheet; a later version might 
 
 It's several orders of magnitude faster than using the VBA scripting library, and it's less convoluted than the few other Excel .NET regex libraries I found out there.
 
-The formula use and syntax show up in the Excel Intellisense UI, and here for reference:
+See the [.Net regular expression documentation](https://docs.microsoft.com/en-us/dotnet/standard/base-types/regular-expressions) for a full description of regexes, 
+including search and replacement patterns, and how options work.
+
+
+The formula use and syntax show up in the Excel Intellisense UI, and below for reference:
 
 #### Function RegexMatch()
-'''
-RegexMatch( input, pattern [, options [, replacement ] ] )
-'''
+`RegexMatch( input, pattern [, options [, replacement ] ] )`
+
 Finds and returns the text of the first instance of the regular expression pattern inside the input string, optionally modified with the option flags, and optionally with a replacement pattern.
-See the .Net regular expression documentation for a full description of regexes, including search and replacement patterns, and how options work.
 
 The options are bit flags (see below), and sould be added up to specify more than one optoin. E.g.: ignore case plus multilines is 4 (1 + 3).
 * 1 = IgnoreCase
@@ -40,21 +42,20 @@ The options are bit flags (see below), and sould be added up to specify more tha
 if not specified, the replacement patterns defaults to "$0".
 
 Returns:
-    * first instance of text in input that conforms to the input pattern and options, optionally modified by a replacement pattern
-    * #VALUE error if the input or pattern are empty strings
-    * #NA error if the pattern is not found
-    * #NUM error for internal errors (please raise an issue if this happens (it shouldn't))
+* first instance of text in input that conforms to the input pattern and options, optionally modified by a replacement pattern
+* #VALUE error if the input or pattern are empty strings
+* #NA error if the pattern is not found
+* #NUM error for internal errors (please raise an issue if this happens (it shouldn't))
 
 
 #### Function RegexReplace()
-'''
-RegexReplace( input, pattern [, options [, replacement ] ] )
-'''
+`RegexReplace( input, pattern [, options [, replacement ] ] )`
+
 Finds all the instances of the search pattern in the input text, optionally modified with the option flags, replaces them with the replacement pattern, and returns the modifed input.
 
 The parameters, and options for RegexReplace() are the same as for RegexReplace().
 
 Returns:
-    * all the input text, with every instance of the search pattern + options replaced by the replacement pattern
-    * #VALUE error if the input or pattern are empty strings
-    * #NUM error for internal errors (please raise an issue if this happens (it shouldn't))
+* all the input text, with every instance of the search pattern + options replaced by the replacement pattern
+* #VALUE error if the input or pattern are empty strings
+* #NUM error for internal errors (please raise an issue if this happens (it shouldn't))
