@@ -28,7 +28,7 @@ The formula use and syntax show up in the Excel Intellisense UI, and below for r
 
 Finds and returns the text of the first instance of the regular expression pattern inside the input string, optionally modified with the option flags, and optionally with a replacement pattern.
 
-The options are bit flags (see below), and sould be added up to specify more than one optoin. E.g.: ignore case plus multilines is 4 (1 + 3).
+The options are bit flags (see below), and sould be added up to specify more than one optoin. E.g.: ignore case plus multilines is 3 (1 + 2).
 * 1 = IgnoreCase
 * 2 = Multiline
 * 4 = ExplicitCapture
