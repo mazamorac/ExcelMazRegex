@@ -2,8 +2,9 @@
 Excel regular expression add-in using .NET regex engine and ExcelDNA integration
 
  ## Version History:
- - 1.1 MAZ 2020-01-29
-  -
+ - 1.1 MAZ 2020-02-02
+  - Added IsRegexMatch, RegexEscape, RegexMatchGroups
+  - Changed 
  - 1.0 MAZ 2020-01-29
    - Released with RegexMatch and RegexReplace
    - Implemented ExcelIntellisense functionality with decorations
@@ -25,12 +26,18 @@ including search and replacement patterns, and how options work.
 
 The formula use and syntax show up in the Excel Intellisense UI, and below for reference:
 
-#### Function RegexMatch()
+### Function RegexEscape()
+`RegexEscape( text )`
+
+Return the input text with special characters escaped. Useful to construct regex patterns with arbitrary text that will not be interpreted for special pattern interpretations, such as when a string includes  "\[", "$", etc.
+
+### Function RegexMatch()
 `RegexMatch( input, pattern [, options [, replacement ] ] )`
 
 Finds and returns the text of the first instance of the regular expression pattern inside the input string, optionally modified with the option flags, and optionally with a replacement pattern.
 
-The options are bit flags (see below), and sould be added up to specify more than one optoin. E.g.: ignore case plus multilines is 3 (1 + 2).
+#### Parameters
+The `options` are bit flags (see below), and sould be added up to specify more than one optoin. E.g.: ignore case plus multilines is 3 (1 + 2).
 * 1 = IgnoreCase
 * 2 = Multiline
 * 4 = ExplicitCapture
@@ -43,21 +50,67 @@ The options are bit flags (see below), and sould be added up to specify more tha
 
 if not specified, the replacement patterns defaults to "$0".
 
-Returns:
-* first instance of text in input that conforms to the input pattern and options, optionally modified by a replacement pattern
+#### Returns:
+* First instance of text in input that conforms to the input pattern and options, optionally modified by a replacement pattern
 * #VALUE error if the input or pattern are empty strings
 * #NA error if the pattern is not found
-* #NUM error for internal errors (please raise an issue if this happens (it shouldn't))
+
+### Function IsRegexMatch()
+`IsRegexMatch( input, pattern [, options ] )`
+
+The parameters are the same as `RegexMatch()`, except for `replacement`, which is not used.
+
+Returns TRUE if the pattern is found in the input, FALSE otherwise. 
+
+### Function RegexMatchGroups()
+`RegexMatchGroups( input, pattern [, options [, MaxMatches [, MaxGroups [, IncludeDuplicates ] ] ] ] )`
+
+Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers.
+
+Useful to find out what chunks of a regular expression were matched against, without actually caring what the text that matched was. I personally use it a lot to label data, see the examples below.
+
+#### Parameters:
+- The `input`, `pattern`, and `options` parameters are the same as for `RegexMatch()`.
+- `MaxMatches`: Maximum number of matches to execute on the input (omit or 0 to return all matches)
+- `MaxGroups`: Maximum number of group names or numbers to return for each match (omit or 0 for all groups)
+- `IncludeDuplicates`: Default TRUE: Print group names every time they're found in a match. FALSE: Only return the first instance of each capture group.
+
+#### Notes:
+- If the pattern has no capture groups, we return group number "0" for each qualifying match. 
+- The groups within each match don't show in the same order as in the pattern, first come all the numbered (unnamed) groups, then all the named ones, so caveat emptor: don't assume the order of the groups inside each match is in pattern appearance order, nor input match index order. See https://docs.microsoft.com/en-us/dotnet/standard/base-types/grouping-constructs-in-regular-expressions?view=netframework-4.8#grouping-constructs-and-regular-expression-objects
 
 
-#### Function RegexReplace()
+#### Examples:
+The formula:
+- `=RegexMatchGroups('liliac,red,mauve,green','<?<primary>red|green|blue)(?<artsy>mauve|lilac|haze)'`)
+- returns: `artsy,primary,artsy,primary`
+
+To only return the first match, you'd use:
+- `=RegexMatchGroups('mauve,red,green','<?<primary>red|green|blue)(?<artsy>mauve|lilac|haze)'`,,1)
+- returns: `artsy`
+
+To return all matches but not repeat group names, you set `IncludeDuplicates=FALSE`:
+- `=RegexMatchGroups('mauve,red,green','<?<primary>red|green|blue)(?<artsy>mauve|lilac|haze)'`,,,,FALSE)
+- returns: `artsy,primary`
+
+The `MaxGroups` sets the max number of groups _per match_. Handy, for example, when different subexpressions may match the same text, and you only care for the first group that does. For example, see the difference between not using `MaxGroups`:
+- `=RegexMatchGroups('mauve,red,green','(?<funky>green|lilac)<?<primary>red|green|blue)(?<artsy>mauve|lilac|haze)'`)
+- returns: `artsy,primary,funky,primary`
+
+... and setting `MaxGroups=1`: 
+- `=RegexMatchGroups('mauve,red,green','(?<funky>green|lilac)<?<primary>red|green|blue)(?<artsy>mauve|lilac|haze)'`,,,1)
+- returns: `artsy,primary,funky`
+
+### Function RegexReplace()
 `RegexReplace( input, pattern [, options [, replacement ] ] )`
 
-Finds all the instances of the search pattern in the input text, optionally modified with the option flags, replaces them with the replacement pattern, and returns the modifed input.
+Finds all the instances of the search pattern in the input text, optionally modified with the option flags, replaces them with the replacement pattern, and returns the modifed input. Similar to `RegexMatch()` but searching and replacing the entire input, and the `replacement` pattern default is an empty string ("").
 
-The parameters, and options for RegexReplace() are the same as for RegexReplace().
+The parameters, and options for RegexReplace() are the same as for RegexMatch(), except for the `replacement` default. 
 
-Returns:
-* all the input text, with every instance of the search pattern + options replaced by the replacement pattern
+#### Returns:
+* The input text with every instance of the search pattern + options replaced by the replacement pattern
 * #VALUE error if the input or pattern are empty strings
-* #NUM error for internal errors (please raise an issue if this happens (it shouldn't))
+
+## General notes:
+* If you ever get a #NUM error, it's an internal error and shouldn't happen. Please raise an issue if it does, with replicable example(s).
