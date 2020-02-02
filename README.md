@@ -2,10 +2,10 @@
 Excel regular expression add-in using .NET regex engine and ExcelDNA integration
 
  ## Version History:
- - 1.1 MAZ 2020-02-02
+- 1.1 MAZ 2020-02-02
   - Added IsRegexMatch, RegexEscape, RegexMatchGroups
   - Few minor fixes 
- - 1.0 MAZ 2020-01-29
+- 1.0 MAZ 2020-01-29
    - Released with RegexMatch and RegexReplace
    - Implemented ExcelIntellisense functionality with decorations
    - ToDo: 
