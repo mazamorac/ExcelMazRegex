@@ -126,7 +126,7 @@ namespace ExcelMazRegex
             int MaxMatches,
             [ExcelArgument( Name = "MaxGroups", Description = "Maximum number of group names or numbers to return for each match (omit or 0 for all groups)")]
             int MaxGroups,
-            [ExcelArgument( Name = "IncludeDuplicates", Description = "Default TRUE: print group names every time they're found in a match. FALSE: Only return the first instance of each capture group")]
+            [ExcelArgument( Name = "IncludeDuplicates", Description = "Default TRUE: Print group names every time they're found in a match. FALSE: Only return the first instance of each capture group")]
             bool IncludeDuplicates = true
         )
         {
