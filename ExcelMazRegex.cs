@@ -141,27 +141,30 @@ namespace ExcelMazRegex
                 // The groups are not in strict order of appearance in the pattern, first come all the numbered (unnamed) groups, then all the named ones,
                 // see https://docs.microsoft.com/en-us/dotnet/standard/base-types/grouping-constructs-in-regular-expressions?view=netframework-4.8#grouping-constructs-and-regular-expression-objects
                 // so caveat emptor: don't assume the order of the groups indicates the order of appearance in the input string.
-                string rs = ""; int i = 0; int j = 0; int m = MaxMatches;
-                // Performance note: regex matches are executed lazily, so iterating on the matches collection 
-                // has no penalty when requesting less matches than the total potential matches.
+                string rs = ""; int afterfirst = 0; int i; int mg;
+                // Performance note: regex matches are executed lazily (it's an iterator), so walking the matches collection 
+                // incurrs no penalty when stopping at a match before the end
                 foreach (Match rm in Regex.Matches(input, pattern, ro))
                 {
-                    int g = MaxGroups;
+                    i = 0; mg = MaxGroups;
                     foreach (Group rg in rm.Groups)
                     {
-                        if (i++ == 0)
-                        {   // Group 0's succcess is the success of the whole match, return #NA if not
-                            if (!g.Success) { return ExcelDna.Integration.ExcelError.ExcelErrorNA; }
-                        }
-                        else
-                        {
-                            if (g.Success)
+                        if ( i++ == 0)              // First group of each match
+                            if (afterfirst == 0)    // First group of all matches: if no success, no match, so return #NA
                             {
-                                rs += ',' + g.Name;
-                                if (--MaxGroups == 0) { break; }
+                                if (!rg.Success) return ExcelDna.Integration.ExcelError.ExcelErrorNA;
+                                afterfirst = 1;
                             }
-                        }
+                        else
+                            if (rg.Success)
+                            {
+                                rs += "," + rg.Name;
+                                if (--mg == 0) { break; }
+                            }
                     }
+                    // i==1 here means: match successful, but no capturing groups above zero, so we add group "0" to results
+                    if (i == 1) rs += ",0";         
+                    if (--MaxMatches == 0) break;
                 }
                 return rs.Substring(1);
             }
