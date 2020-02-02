@@ -113,7 +113,7 @@ namespace ExcelMazRegex
         }
 
 
-        [ExcelFunction(Description = "Search for input for the pattern, return a comma delimited list of names or numbers of matching capture groups")]
+        [ExcelFunction(Description = "Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers")]
 
         public static object RegexMatchGroups(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -125,7 +125,9 @@ namespace ExcelMazRegex
             [ExcelArgument( Name = "MaxMatches", Description = "Maximum number of matches to execute on the input (omit or 0 to return all matches)")]
             int MaxMatches,
             [ExcelArgument( Name = "MaxGroups", Description = "Maximum number of group names or numbers to return for each match (omit or 0 for all groups)")]
-            int MaxGroups
+            int MaxGroups,
+            [ExcelArgument( Name = "IncludeDuplicates", Description = "Default TRUE: print group names every time they're found in a match. FALSE: Only return the first instance of each capture group")]
+            bool IncludeDuplicates = true
         )
         {
             if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
@@ -135,38 +137,43 @@ namespace ExcelMazRegex
             else
             {
                 RegexOptions ro = (RegexOptions)options;
-                // For each match requested, walk the list of groups, concatenating the names/numbers of successful captures
-                // If the pattern has no capture groups, we return a "0" group number if successful.
-                // If the pattern does have capture groups we skip group 0 in each collection, as it represents the whole regex
-                // The groups are not in strict order of appearance in the pattern, first come all the numbered (unnamed) groups, then all the named ones,
+                HashSet<String> seengroup = new HashSet<String>();
+                // Walk the matches, for each match, walk the capture groups, concatenating the names/numbers of successful captures, checking for max count or duplication limits
+                // If the pattern has no capture groups, we return group number "0" for each qualifying match.
+                // The groups within each match don't show in the same order as in the pattern, first come all the numbered (unnamed) groups, then all the named ones,
                 // see https://docs.microsoft.com/en-us/dotnet/standard/base-types/grouping-constructs-in-regular-expressions?view=netframework-4.8#grouping-constructs-and-regular-expression-objects
-                // so caveat emptor: don't assume the order of the groups indicates the order of appearance in the input string.
-                string rs = ""; int afterfirst = 0; int i; int mg;
-                // Performance note: regex matches are executed lazily (it's an iterator), so walking the matches collection 
-                // incurrs no penalty when stopping at a match before the end
+                // so caveat emptor: don't assume the order of the groups inside each match is in pattern appearance order, nor input match index order.
+
+                string matchlist = ""; bool isfirst = true; int gnum; int gfound;
+                // Performance note: regex matches are executed lazily (it's an iterator, not prepopulated), 
+                // so walking the matches collection incurrs no penalty when stopping before the end
                 foreach (Match rm in Regex.Matches(input, pattern, ro))
                 {
-                    i = 0; mg = MaxGroups;
+                    gnum = 0; gfound = MaxGroups;
                     foreach (Group rg in rm.Groups)
                     {
-                        if ( i++ == 0)              // First group of each match
-                            if (afterfirst == 0)    // First group of all matches: if no success, no match, so return #NA
+                        if (gnum++ == 0)     // First group of every match, check the first one, skip the rest
+                        {
+                            if (isfirst)      // First group of all matches: if no match return #NA
                             {
                                 if (!rg.Success) return ExcelDna.Integration.ExcelError.ExcelErrorNA;
-                                afterfirst = 1;
+                                isfirst = false;
                             }
+                        }
                         else
-                            if (rg.Success)
+                            if (rg.Success && ( IncludeDuplicates || ! seengroup.Contains(rg.Name) ) )
                             {
-                                rs += "," + rg.Name;
-                                if (--mg == 0) { break; }
+                                matchlist += "," + rg.Name;
+                                if (--gfound == 0) break;
+                                if( !IncludeDuplicates ) seengroup.Add(rg.Name);   // avoid lookup maintenance overhead if not required
                             }
                     }
-                    // i==1 here means: match successful, but no capturing groups above zero, so we add group "0" to results
-                    if (i == 1) rs += ",0";         
+                    // If i==1 here then the match was successful, but no capturing groups above zero exist, 
+                    // so we add group "0" (which we skipped, see comments above)
+                    if (gnum == 1) matchlist += ",0";         
                     if (--MaxMatches == 0) break;
                 }
-                return rs.Substring(1);
+                return matchlist.Substring(1);
             }
         }
 
