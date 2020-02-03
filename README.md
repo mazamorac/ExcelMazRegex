@@ -16,8 +16,7 @@ Excel regular expression add-in using .NET regex engine and ExcelDNA integration
    - Consider for later: 
      - V1 function calls from inside Excel are now pretty fast, but consider memoization for the future
 
-## Documentation:
-### Summary
+## Overview
 ExcelMAZRegez is a simple, fast .NET regular expression library for Excel. 
 As of v1 it's only for Excel formulas inside a worksheet; a later version might implement it for use inside VBA.
 
@@ -29,6 +28,13 @@ including search and replacement patterns, and how options work.
 
 The formula use and syntax show up in the Excel Intellisense UI, and below for reference:
 
+## Installation:
+- Download the `\*-packed.xll` and `ExcelDna.IntelliSense.dll` files from the project repository [Releases page](https://github.com/mazamorac/ExcelMazRegex/releases) 
+- Copy the appropriate `\*.xll` add-in file (32 or 64 bit) to your Excel add-ins folder (`%APPDATA%\Microsoft\AddIns` on Windows).
+- Copy the `ExcelDna.IntelliSense.dll` file into the add-ins folder.
+- Turn on the add-in in the Excel manage addins dialog (Alt+t,i).
+
+## Documentation:
 ### Function RegexEscape()
 `RegexEscape( text )`
 
