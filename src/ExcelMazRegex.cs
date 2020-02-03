@@ -7,7 +7,10 @@ using System.Threading.Tasks;
 using ExcelDna.Integration;
 using ExcelDna.IntelliSense;
 using System.Text.RegularExpressions;
+using System.Reflection;
 
+// ToDo: implement versioning from code instead of project properties
+// [assembly: AssemblyVersion("1.2.0.1")]
 
 namespace ExcelMazRegex
 {
@@ -28,22 +31,18 @@ namespace ExcelMazRegex
         {
             // the replacement string is not checked for an empty string or null because empty is a valid replacement pattern and null when ommited (it's optional)
             if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern) )
-            {
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
-            }
             else
             {
                 RegexOptions ro = (RegexOptions)options;
-                if (string.IsNullOrEmpty(replacement))
-                {
-                    return Regex.Match(input, pattern, ro).Value;
-                }
-                else
-                {
-                    return Regex.Match(input, pattern, ro).Result(replacement);
-                    // if not found, how do we return the NA? Test first with plain Result, see how it's returned
-                    // return ExcelDna.Integration.ExcelError.ExcelErrorNA;
-                }
+                Match rm = Regex.Match(input, pattern, ro);
+                if (rm.Success)
+                    if (string.IsNullOrEmpty(replacement))
+                        return rm.Value;
+                    else
+                        return Regex.Match(input, pattern, ro).Result(replacement);
+                else 
+                    return ExcelDna.Integration.ExcelError.ExcelErrorNA;
             }
         }
 
@@ -64,9 +63,7 @@ namespace ExcelMazRegex
         {
             // the replacement string is not checked for an empty string because that is a valid replacement pattern
             if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern) || replacement == null)
-            {
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
-            }
             else
             {
                 RegexOptions ro = (RegexOptions)options;
@@ -98,9 +95,7 @@ namespace ExcelMazRegex
          )
         {
             if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
-            {
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
-            }
             else
             {
                 RegexOptions ro = (RegexOptions)options;
@@ -131,9 +126,7 @@ namespace ExcelMazRegex
         )
         {
             if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
-            {
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
-            }
             else
             {
                 RegexOptions ro = (RegexOptions)options;
@@ -177,7 +170,46 @@ namespace ExcelMazRegex
             }
         }
 
+        [ExcelFunction(Description = "Finds all the occurrences of the pattern in the input. Returns delimiter-separated list of matches with optional replacement pattern.")]
 
+        public static object RegexMatches(
+            [ExcelArgument( Name = "input",     Description = "Input text"  )]
+            String input,
+            [ExcelArgument( Name = "pattern",   Description = "Regular expression pattern to search for"    )]
+            String pattern,
+            [ExcelArgument( Name = "options",   Description = "Regex option flags, sum for each active option: IgnoreCase = 1, Multiline = 2, ExplicitCapture = 4, Compiled = 8, Singleline = 16, IgnorePatternWhitespace = 32, RightToLeft = 64, ECMAScript = 256, CultureInvariant = 512" ) ]
+            int options,
+            [ExcelArgument( Name = "replacement", Description = "Optional replacement pattern for result")]
+            String replacement,
+            [ExcelArgument( Name = "delimiter", Description = "Delimiter for the list of results, default ','")]
+            object delimiter
+        )
+        {
+            // the replacement string is not checked for an empty string or null because empty is a valid replacement pattern and null when ommited (it's optional)
+            if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
+                return ExcelDna.Integration.ExcelError.ExcelErrorValue;
+            else
+            {
+                RegexOptions ro = (RegexOptions)options;
+                string delim = (delimiter is ExcelMissing ? "," : (string)delimiter);
+                string rs = "";
+                if (string.IsNullOrEmpty(replacement))
+                    foreach (Match rm in Regex.Matches(input, pattern, ro))
+                    {
+                        if (rm.Success) rs += delim + rm.Value;
+                    }
+                else
+                    foreach (Match rm in Regex.Matches(input, pattern, ro))
+                    {
+                        if (rm.Success) rs += delim + rm.Result(replacement);
+                    }
+                
+                if (rs == "")
+                    return ExcelDna.Integration.ExcelError.ExcelErrorNA;
+                else
+                    return rs.Substring( delim.Length );
+            }
+        }
     }
 
 }

@@ -2,16 +2,19 @@
 Excel regular expression add-in using .NET regex engine and ExcelDNA integration
 
  ## Version History:
+- 1.2 MAZ 2020-02-02
+  - Added `RegexMatches()`
+  - Fixed `RegexMatch()` return value when not matched (did not return #NA correctly)
 - 1.1 MAZ 2020-02-02
-  - Added IsRegexMatch, RegexEscape, RegexMatchGroups
+  - Added `IsRegexMatch()`, `RegexEscape()`, `RegexMatchGroups()`
   - Few minor fixes 
 - 1.0 MAZ 2020-01-29
-   - Released with RegexMatch and RegexReplace
-   - Implemented ExcelIntellisense functionality with decorations
+   - Released with `RegexMatch()` and `RegexReplace()`
+   - Implemented Excel Intellisense functionality using decorations
    - ToDo: 
      - Add thread-safe ExcelDNA registration. This assumes we *never* have a Regex.Match object jump threads.
    - Consider for later: 
-     - V1 function calls from inside Excel are pretty fast, but consider memoization for the future
+     - V1 function calls from inside Excel are now pretty fast, but consider memoization for the future
 
 ## Documentation:
 ### Summary
@@ -55,12 +58,26 @@ if not specified, the replacement patterns defaults to "$0".
 * #VALUE error if the input or pattern are empty strings
 * #NA error if the pattern is not found
 
+### Function RegexMatches()
+`RegexMatches( input, pattern [, options [, replacement ] ] )`
+
+Finds all the occurrences of the pattern in the input. Returns delimiter-separated list of matches with optional replacement pattern.
+
+#### Parameters
+- Same as `RegexMatch()`, plus...
+- `delimiter`: Delimiter for the list of results, default ','
+
+#### Returns:
+- String with delimiter-separated list of matches found, optionally modified by replacement pattern.
+
 ### Function IsRegexMatch()
 `IsRegexMatch( input, pattern [, options ] )`
 
-The parameters are the same as `RegexMatch()`, except for `replacement`, which is not used.
+#### Parameters
+- Same as `RegexMatch()`, except for `replacement`, which is not used.
 
-Returns TRUE if the pattern is found in the input, FALSE otherwise. 
+#### Returns:
+TRUE if the pattern is found in the input, FALSE otherwise. 
 
 ### Function RegexMatchGroups()
 `RegexMatchGroups( input, pattern [, options [, MaxMatches [, MaxGroups [, IncludeDuplicates ] ] ] ] )`
