@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,7 +17,18 @@ namespace ExcelMazRegex
 {
     public static class ExcelMazRegex
     {
-        [ExcelFunction(Description = "Find the pattern in the input, return the first matching string.")]
+
+        // For RegexGroupMatches we need to remember the order in which we added items to the set
+        public class OrderedHashSet<T> : KeyedCollection<T, T>
+        {
+            protected override T GetKeyForItem(T item)
+            {
+                return item;
+            }
+        }
+
+
+        [ExcelFunction(Description = "Find the pattern in the input, return the first matching string."), IsThreadSafe = true]
 
         public static object RegexMatch(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -48,7 +60,7 @@ namespace ExcelMazRegex
 
 
 
-        [ExcelFunction(Description = "Find the pattern in the input, substitute all matches with the replacement pattern")]
+        [ExcelFunction(Description = "Find the pattern in the input, substitute all matches with the replacement pattern"), IsThreadSafe = true]
 
         public static object RegexReplace(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -83,8 +95,8 @@ namespace ExcelMazRegex
         }
 
 
-        [ExcelFunction(Description = "Find the pattern in the input, return TRUE if matched, FALSE otherwise")]
-        
+        [ExcelFunction(Description = "Find the pattern in the input, return TRUE if matched, FALSE otherwise"), IsThreadSafe = true]
+
         public static object IsRegexMatch(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
             String input,
@@ -108,7 +120,7 @@ namespace ExcelMazRegex
         }
 
 
-        [ExcelFunction(Description = "Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers")]
+        [ExcelFunction(Description = "Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers in match order"), IsThreadSafe = true]
 
         public static object RegexMatchGroups(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -122,7 +134,7 @@ namespace ExcelMazRegex
             [ExcelArgument( Name = "MaxGroups", Description = "Maximum number of group names or numbers to return for each match (omit or 0 for all groups)")]
             int MaxGroups,
             [ExcelArgument( Name = "IncludeDuplicates", Description = "Default TRUE: Print group names every time they're found in a match. FALSE: Only return the first instance of each capture group")]
-            bool IncludeDuplicates = true
+            object IncludeDuplicates
         )
         {
             if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
@@ -130,12 +142,24 @@ namespace ExcelMazRegex
             else
             {
                 RegexOptions ro = (RegexOptions)options;
+                bool incdups = (
+                    IncludeDuplicates is ExcelMissing
+                        ? true
+                        : ( IncludeDuplicates is bool
+                            ? (bool) IncludeDuplicates 
+                            : ( IncludeDuplicates is string 
+                                ? String.IsNullOrEmpty((string)IncludeDuplicates) 
+                                : ( (IncludeDuplicates is int ) || (IncludeDuplicates is double ) 
+                                    ? ( (double) IncludeDuplicates ) > 0
+                                    : false
+                ) ) ) );
                 HashSet<String> seengroup = new HashSet<String>();
                 // Walk the matches, for each match, walk the capture groups, concatenating the names/numbers of successful captures, checking for max count or duplication limits
                 // If the pattern has no capture groups, we return group number "0" for each qualifying match.
                 // The groups within each match don't show in the same order as in the pattern, first come all the numbered (unnamed) groups, then all the named ones,
                 // see https://docs.microsoft.com/en-us/dotnet/standard/base-types/grouping-constructs-in-regular-expressions?view=netframework-4.8#grouping-constructs-and-regular-expression-objects
                 // so caveat emptor: don't assume the order of the groups inside each match is in pattern appearance order, nor input match index order.
+                // this behavior can be controlled if using regex option flag ExplicitCapture (4), which ignores non-named capture groups.
 
                 string matchlist = ""; bool isfirst = true; int gnum; int gfound;
                 // Performance note: regex matches are executed lazily (it's an iterator, not prepopulated), 
@@ -154,11 +178,11 @@ namespace ExcelMazRegex
                             }
                         }
                         else
-                            if (rg.Success && ( IncludeDuplicates || ! seengroup.Contains(rg.Name) ) )
+                            if (rg.Success && (incdups || ! seengroup.Contains(rg.Name) ) )
                             {
                                 matchlist += "," + rg.Name;
                                 if (--gfound == 0) break;
-                                if( !IncludeDuplicates ) seengroup.Add(rg.Name);   // avoid lookup maintenance overhead if not required
+                                if( ! incdups) seengroup.Add(rg.Name);   // avoid lookup maintenance overhead if not required
                             }
                     }
                     // If i==1 here then the match was successful, but no capturing groups above zero exist, 
@@ -170,7 +194,8 @@ namespace ExcelMazRegex
             }
         }
 
-        [ExcelFunction(Description = "Finds all the occurrences of the pattern in the input. Returns delimiter-separated list of matches with optional replacement pattern.")]
+
+        [ExcelFunction(Description = "Finds all the occurrences of the pattern in the input. Returns delimiter-separated list of matches with optional replacement pattern."), IsThreadSafe = true]
 
         public static object RegexMatches(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -210,6 +235,113 @@ namespace ExcelMazRegex
                     return rs.Substring( delim.Length );
             }
         }
+
+        [ExcelFunction(Description = "Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers in capture group order within the pattern"), IsThreadSafe = true]
+
+        public static object RegexGroupMatches(
+            [ExcelArgument( Name = "input",     Description = "Input text"  )]
+            String input,
+            [ExcelArgument( Name = "pattern",   Description = "Regular expression pattern to search for"    )]
+            String pattern,
+            [ExcelArgument( Name = "options",   Description = "Regex option flags, sum for each active option: IgnoreCase = 1, Multiline = 2, ExplicitCapture = 4, Compiled = 8, Singleline = 16, IgnorePatternWhitespace = 32, RightToLeft = 64, ECMAScript = 256, CultureInvariant = 512" ) ]
+            int options,
+            [ExcelArgument( Name = "MaxMatches", Description = "Maximum number of matches to execute on the input (omit or 0 to return all matches)")]
+            int MaxMatches,
+            [ExcelArgument( Name = "MaxGroups", Description = "Maximum number of group names or numbers to return (omit or 0 for all groups)")]
+            int MaxGroups,
+            [ExcelArgument( Name = "IncludeDuplicates", Description = "Default TRUE: Print group names every time they're found in a match. FALSE: Only return the first instance of each capture group")]
+            object IncludeDuplicates,
+            [ExcelArgument( Name = "GroupNamesTransformPattern",  Description = "Transform group names on output list, regex pattern for search"    )]
+            String GroupNamesTransformPattern,
+            [ExcelArgument( Name = "GroupNamesTransformReplacement",  Description = "Transform group names on output list, regex replacement pattern"    )]
+            String GroupNamesTransformReplacement
+        )
+        {
+            if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
+                return ExcelDna.Integration.ExcelError.ExcelErrorValue;
+            else
+            {
+                // Walk the matches, for each match, walk the capture groups, concatenating the names/numbers of successful captures, checking for max count or duplication limits
+                // If the pattern has no capture groups, we return group number "0" for each qualifying match.
+                // The groups within each match don't show in the same order as in the pattern, first come all the numbered (unnamed) groups, then all the named ones,
+                // see https://docs.microsoft.com/en-us/dotnet/standard/base-types/grouping-constructs-in-regular-expressions?view=netframework-4.8#grouping-constructs-and-regular-expression-objects
+                // so caveat emptor: don't assume the order of the groups inside each match is in pattern appearance order, nor input match index order.
+                // this behavior can be controlled if using regex option flag ExplicitCapture (4), which ignores non-named capture groups.
+
+                RegexOptions ro = (RegexOptions)options;
+                bool incdups = (
+                    IncludeDuplicates is ExcelMissing
+                        ? true
+                        : (IncludeDuplicates is bool
+                            ? (bool)IncludeDuplicates
+                            : (IncludeDuplicates is string
+                                ? String.IsNullOrEmpty((string)IncludeDuplicates)
+                                : ((IncludeDuplicates is int) || (IncludeDuplicates is double)
+                                    ? ((double)IncludeDuplicates) > 0
+                                    : false
+                ))));
+                string matchlist = ""; string[] gnames; int[] gmatched;
+                int gcount = 0, gnum = 0;
+                
+                
+                // If we get a match, retrieve the capture group names and initialize data structures, else return #NA
+                MatchCollection rmc = Regex.Matches(input, pattern, ro);
+                Match firstmatch = rmc[0];
+                if (! firstmatch.Success) return ExcelDna.Integration.ExcelError.ExcelErrorNA;
+                
+                GroupCollection rgc = firstmatch.Groups;
+                gcount = rgc.Count;
+                gmatched = new    int[gcount];  // For capture group match counts
+                gnames   = new string[gcount];  // For capture group names
+                foreach (Group rg in rgc)
+                {
+                    gnames[gnum++] = rg.Name;
+                }
+                
+                // Now walk a maximum of of MaxMatches, recording successfully matched capture groups
+                foreach (Match rm in rmc)
+                {
+                    gnum = 0; 
+                    foreach (Group rg in rm.Groups)
+                    {
+                        if (rg.Success) ++gmatched[gnum];
+                        ++gnum;
+                    }
+                    if (--MaxMatches==0) break;
+                }
+
+                // Now construct output list, with MaxGroups names, honoring IncludeDuplicates and GroupNamesTransformPattern
+                HashSet<String> seengroup = new HashSet<String>(); string gname;
+                bool stripnames; string[] gstripped = new string[gcount];
+
+                if (stripnames = ! String.IsNullOrEmpty(GroupNamesTransformPattern))
+                {
+                    if (String.IsNullOrEmpty(GroupNamesTransformReplacement)) GroupNamesTransformReplacement = "";
+                    for (int i = 0; i < gcount; i++)
+                        gstripped[i] = Regex.Replace(gnames[i], GroupNamesTransformPattern, GroupNamesTransformReplacement);
+                }
+
+
+                for (int i = ( gcount == 1 ? 0 : 1); i < gcount; i++)           // If there are defined capture groups, skip group 0 (corresponding to the full pattern)
+                {
+                    if (gmatched[i] > 0)
+                    {
+                        gname = ( stripnames ? gstripped[i] : gnames[i] );
+                        if (incdups || ! seengroup.Contains(gname))
+                        {
+                            matchlist += "," + gname;
+                            if (--MaxGroups == 0) break;
+                            if ( ! incdups ) seengroup.Add(gname);
+                        }
+                    }
+                } 
+
+                // debugging output. ToDo: Remove later
+                // return $"{gcount}|" + String.Join(",", (stripnames ? gstripped : gnames)) + "|" + matchlist;
+                return matchlist.Substring(1);
+            }
+        }
+
     }
 
 }
