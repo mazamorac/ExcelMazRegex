@@ -28,7 +28,7 @@ namespace ExcelMazRegex
         }
 
 
-        [ExcelFunction(Description = "Find the pattern in the input, return the first matching string."), IsThreadSafe = true]
+        [ExcelFunction(Description = "Find the pattern in the input, return the first matching string." , IsThreadSafe = true ) ]
 
         public static object RegexMatch(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -60,7 +60,7 @@ namespace ExcelMazRegex
 
 
 
-        [ExcelFunction(Description = "Find the pattern in the input, substitute all matches with the replacement pattern"), IsThreadSafe = true]
+        [ExcelFunction(Description = "Find the pattern in the input, substitute all matches with the replacement pattern" , IsThreadSafe = true ) ]
 
         public static object RegexReplace(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -85,7 +85,7 @@ namespace ExcelMazRegex
         }
 
 
-        [ExcelFunction(Description = "Return string with special characters escaped to remove special meaning", IsThreadSafe = true)]
+        [ExcelFunction(Description = "Return string with special characters escaped to remove special meaning", IsThreadSafe = true ) ]
 
         public static string RegexEscape(
             [ExcelArgument(Name = "input", Description = "String to return with special characters escaped")]
@@ -95,7 +95,7 @@ namespace ExcelMazRegex
         }
 
 
-        [ExcelFunction(Description = "Find the pattern in the input, return TRUE if matched, FALSE otherwise"), IsThreadSafe = true]
+        [ExcelFunction(Description = "Find the pattern in the input, return TRUE if matched, FALSE otherwise" , IsThreadSafe = true ) ]
 
         public static object IsRegexMatch(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -120,7 +120,7 @@ namespace ExcelMazRegex
         }
 
 
-        [ExcelFunction(Description = "Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers in match order"), IsThreadSafe = true]
+        [ExcelFunction(Description = "Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers in match order" , IsThreadSafe = true ) ]
 
         public static object RegexMatchGroups(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -195,7 +195,7 @@ namespace ExcelMazRegex
         }
 
 
-        [ExcelFunction(Description = "Finds all the occurrences of the pattern in the input. Returns delimiter-separated list of matches with optional replacement pattern."), IsThreadSafe = true]
+        [ExcelFunction(Description = "Finds all the occurrences of the pattern in the input. Returns delimiter-separated list of matches with optional replacement pattern." , IsThreadSafe = true ) ]
 
         public static object RegexMatches(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
@@ -236,7 +236,7 @@ namespace ExcelMazRegex
             }
         }
 
-        [ExcelFunction(Description = "Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers in capture group order within the pattern"), IsThreadSafe = true]
+        [ExcelFunction(Description = "Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers in capture group order within the pattern" , IsThreadSafe = true ) ]
 
         public static object RegexGroupMatches(
             [ExcelArgument( Name = "input",     Description = "Input text"  )]
