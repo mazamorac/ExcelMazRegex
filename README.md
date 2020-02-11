@@ -2,6 +2,8 @@
 Excel regular expression add-in using .NET regex engine and ExcelDNA integration.
 
  ## Version History:
+- 1.3.1 MAZ 2020-02-10
+  - Changed the handling of the `input` text parameter: empty iput strings do not trigger a #VALUE error anymore, `null` still does, though ExcelDNA doesn't seem to pass any nulls.
 - 1.3 MAZ 2020-02-03
   - Added `RegexGroupMatches()`
   - Tagged all the functions as thread-safe, improving performance.
