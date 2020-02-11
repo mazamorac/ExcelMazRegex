@@ -42,10 +42,11 @@ namespace ExcelMazRegex
         )
         {
             // the replacement string is not checked for an empty string or null because empty is a valid replacement pattern and null when ommited (it's optional)
-            if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern) )
+            if ( input == null || String.IsNullOrEmpty(pattern) )
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
             else
             {
+                //if (String.IsNullOrEmpty(input)) input = "";
                 RegexOptions ro = (RegexOptions)options;
                 Match rm = Regex.Match(input, pattern, ro);
                 if (rm.Success)
@@ -74,7 +75,7 @@ namespace ExcelMazRegex
             )
         {
             // the replacement string is not checked for an empty string because that is a valid replacement pattern
-            if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern) || replacement == null)
+            if ( input==null || String.IsNullOrEmpty(pattern) || replacement == null )
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
             else
             {
@@ -106,7 +107,7 @@ namespace ExcelMazRegex
             int options
          )
         {
-            if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
+            if ( input==null || String.IsNullOrEmpty(pattern) )
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
             else
             {
@@ -137,7 +138,7 @@ namespace ExcelMazRegex
             object IncludeDuplicates
         )
         {
-            if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
+            if ( input == null || String.IsNullOrEmpty(pattern) )
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
             else
             {
@@ -211,7 +212,7 @@ namespace ExcelMazRegex
         )
         {
             // the replacement string is not checked for an empty string or null because empty is a valid replacement pattern and null when ommited (it's optional)
-            if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
+            if ( input == null || String.IsNullOrEmpty(pattern) )
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
             else
             {
@@ -247,7 +248,7 @@ namespace ExcelMazRegex
             int options,
             [ExcelArgument( Name = "MaxMatches", Description = "Maximum number of matches to execute on the input (omit or 0 to return all matches)")]
             int MaxMatches,
-            [ExcelArgument( Name = "MaxGroups", Description = "Maximum number of group names or numbers to return (omit or 0 for all groups)")]
+            [ExcelArgument( Name = "MaxGroups", Description = "Maximum total number of group names or numbers to return (omit or 0 for all groups)")]
             int MaxGroups,
             [ExcelArgument( Name = "IncludeDuplicates", Description = "Default TRUE: Print group names every time they're found in a match. FALSE: Only return the first instance of each capture group")]
             object IncludeDuplicates,
@@ -257,7 +258,7 @@ namespace ExcelMazRegex
             String GroupNamesTransformReplacement
         )
         {
-            if (String.IsNullOrEmpty(input) || String.IsNullOrEmpty(pattern))
+            if ( input == null || String.IsNullOrEmpty(pattern) )
                 return ExcelDna.Integration.ExcelError.ExcelErrorValue;
             else
             {
