@@ -1,7 +1,11 @@
 # ExcelMazRegex
-Excel regular expression add-in using .NET regex engine and ExcelDNA integration
+Excel regular expression add-in using .NET regex engine and ExcelDNA integration.
 
  ## Version History:
+- 1.3 MAZ 2020-02-03
+  - Added `RegexGroupMatches()`
+  - Tagged all the functions as thread-safe, improving performance.
+  - Fixed handling of optional parms, such as IncludeDuplicates, which did not handle defaults correctly
 - 1.2 MAZ 2020-02-02
   - Added `RegexMatches()`
   - Fixed `RegexMatch()` return value when not matched (did not return #NA correctly)
@@ -88,7 +92,7 @@ TRUE if the pattern is found in the input, FALSE otherwise.
 ### Function RegexMatchGroups()
 `RegexMatchGroups( input, pattern [, options [, MaxMatches [, MaxGroups [, IncludeDuplicates ] ] ] ] )`
 
-Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers.
+Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers _in match order_.
 
 Useful to find out what chunks of a regular expression were matched against, without actually caring what the text that matched was. I personally use it a lot to label data, see the examples below.
 
@@ -123,6 +127,25 @@ The `MaxGroups` sets the max number of groups _per match_. Handy, for example, w
 ... and setting `MaxGroups=1`: 
 - `=RegexMatchGroups('mauve,red,green','(?<funky>green|lilac)<?<primary>red|green|blue)(?<artsy>mauve|lilac|haze)'`,,,1)
 - returns: `artsy,primary,funky`
+
+### Function RegexGroupMatches()
+`RegexMatchGroups( input, pattern [, options [, MaxMatches [, MaxGroups [, IncludeDuplicates [, GroupNamesTransformPattern [, GroupNamesTransformReplacement ] ] ] ] ] ] )`
+
+Search the input for matches of the pattern, return a comma delimited list of matching capture group names/numbers in _capture group order_ within the pattern.
+
+The difference between `RegexMatchGroups()` and `RegexGroupMatches()` is that the first reports the results in the order of matches in the input, while the latter reports the results in the order of the search pattern. Besides, as a convenience, it allows to do a match/replace on the returned group names.
+
+#### Parameters
+- The `input`, `pattern`, `options`, `MaxMatches`, and `IncludeDuplicates` parameters are the same as for `RegexMatchGroups()`.
+- `MaxGroups`: Maximum total number of group names or numbers to return (omit or 0 for all groups).
+- `GroupNamesTransformPattern`: Transform group names on output list, regex pattern for search
+- `GroupNamesTransformReplacement`: Transform group names on output list, regex replacement pattern
+
+#### Notes
+- This function is useful to check for multiple pattern matches using a single regular expression, give each pattern a name in a capture group, and return the names of the groups that match, more importantly: _in the order of the definition of the capture groups_. This makes it a very succint mechanism to tag data with arbitrary precedence rules. 
+
+#### Examples
+_To Do: Include examples from CalIns project showing rule precedence_
 
 ### Function RegexReplace()
 `RegexReplace( input, pattern [, options [, replacement ] ] )`
