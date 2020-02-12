@@ -208,7 +208,12 @@ namespace ExcelMazRegex
             [ExcelArgument( Name = "replacement", Description = "Optional replacement pattern for result")]
             String replacement,
             [ExcelArgument( Name = "delimiter", Description = "Delimiter for the list of results, default ','")]
-            object delimiter
+            object delimiter,
+            [ExcelArgument( Name = "MaxMatches", Description = "Maximum number of matches to execute on the input (omit or 0 to return all matches)")]
+            int MaxMatches,
+            [ExcelArgument( Name = "IncludeDuplicates", Description = "Default TRUE: return every match. FALSE: Only return the first instance of each match")]
+            object IncludeDuplicates
+
         )
         {
             // the replacement string is not checked for an empty string or null because empty is a valid replacement pattern and null when ommited (it's optional)
@@ -217,18 +222,30 @@ namespace ExcelMazRegex
             else
             {
                 RegexOptions ro = (RegexOptions)options;
+                bool incdups = (
+                    IncludeDuplicates is ExcelMissing
+                        ? true
+                        : (IncludeDuplicates is bool
+                            ? (bool)IncludeDuplicates
+                            : (IncludeDuplicates is string
+                                ? String.IsNullOrEmpty((string)IncludeDuplicates)
+                                : ((IncludeDuplicates is int) || (IncludeDuplicates is double)
+                                    ? ((double)IncludeDuplicates) > 0
+                                    : false
+                ))));
+                HashSet<String> seengroup = new HashSet<String>();
                 string delim = (delimiter is ExcelMissing ? "," : (string)delimiter);
                 string rs = "";
-                if (string.IsNullOrEmpty(replacement))
-                    foreach (Match rm in Regex.Matches(input, pattern, ro))
+                bool hasReplacement = ! string.IsNullOrEmpty(replacement);
+                foreach (Match rm in Regex.Matches(input, pattern, ro))
+                {
+                    if (rm.Success && (incdups || !seengroup.Contains(rm.Value)))
                     {
-                        if (rm.Success) rs += delim + rm.Value;
+                        rs += delim + ( hasReplacement ? rm.Result(replacement) : rm.Value );
+                        if (!incdups) seengroup.Add(rm.Value);
+                        if (--MaxMatches == 0) break;
                     }
-                else
-                    foreach (Match rm in Regex.Matches(input, pattern, ro))
-                    {
-                        if (rm.Success) rs += delim + rm.Result(replacement);
-                    }
+                }
                 
                 if (rs == "")
                     return ExcelDna.Integration.ExcelError.ExcelErrorNA;
