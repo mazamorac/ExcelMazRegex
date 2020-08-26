@@ -9,6 +9,7 @@ using ExcelDna.Integration;
 using ExcelDna.IntelliSense;
 using System.Text.RegularExpressions;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 
 // ToDo: implement versioning from code instead of project properties
 // [assembly: AssemblyVersion("1.2.0.1")]
@@ -25,6 +26,13 @@ namespace ExcelMazRegex
             {
                 return item;
             }
+        }
+
+        [ExcelFunction(Description = "Returns the version number.", IsThreadSafe = true)]
+
+        public static string RegexVersionNumber()
+        {
+            return "1.3.1";
         }
 
 
@@ -133,7 +141,7 @@ namespace ExcelMazRegex
             [ExcelArgument( Name = "MaxMatches", Description = "Maximum number of matches to execute on the input (omit or 0 to return all matches)")]
             int MaxMatches,
             [ExcelArgument( Name = "MaxGroups", Description = "Maximum number of group names or numbers to return for each match (omit or 0 for all groups)")]
-            int MaxGroups,
+            object MaxGroups,
             [ExcelArgument( Name = "IncludeDuplicates", Description = "Default TRUE: Print group names every time they're found in a match. FALSE: Only return the first instance of each capture group")]
             object IncludeDuplicates
         )
@@ -154,6 +162,34 @@ namespace ExcelMazRegex
                                     ? ( (double) IncludeDuplicates ) > 0
                                     : false
                 ) ) ) );
+                int maxgrp = 0;
+                if ((MaxGroups is int) || (MaxGroups is double))
+                {
+                    maxgrp = (int)(double)MaxGroups;
+                }
+                else
+                {
+                    if (MaxGroups is string)
+                    {
+
+                        if (String.IsNullOrEmpty((string)MaxGroups))
+                        {
+                            maxgrp = 0;
+                        }
+                        else
+                        {
+                            if (!int.TryParse((string)MaxGroups, out maxgrp)) return ExcelDna.Integration.ExcelError.ExcelErrorValue;
+                        }
+                    }
+                    else
+                    {
+                        if (MaxGroups is bool & (bool)MaxGroups)
+                        {
+                            maxgrp = 1;
+                        }
+                    }
+                }
+
                 HashSet<String> seengroup = new HashSet<String>();
                 // Walk the matches, for each match, walk the capture groups, concatenating the names/numbers of successful captures, checking for max count or duplication limits
                 // If the pattern has no capture groups, we return group number "0" for each qualifying match.
@@ -167,7 +203,7 @@ namespace ExcelMazRegex
                 // so walking the matches collection incurrs no penalty when stopping before the end
                 foreach (Match rm in Regex.Matches(input, pattern, ro))
                 {
-                    gnum = 0; gfound = MaxGroups;
+                    gnum = 0; gfound = maxgrp;
                     foreach (Group rg in rm.Groups)
                     {
                         if (gnum++ == 0)     // First group of every match, check the first one, skip the rest
